@@ -1,30 +1,25 @@
-import requests
-import random
-import string
+import allure
+from helpers.generators import DataGenerator
+from helpers.api_client import ScooterApiClient
 
 class CourierHelper:
     
-    BASE_URL = "https://qa-scooter.praktikum-services.ru/api/v1"
-    
-    def generate_random_string(self, length):
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(length))
-    
+    def __init__(self):
+        self.api_client = ScooterApiClient()
+        self.generator = DataGenerator()
+
+    @allure.step("Регистрация нового курьера")
     def register_new_courier_and_return_login_password(self):
+       
         login_pass = []
         
-        login = self.generate_random_string(10)
-        password = self.generate_random_string(10)
-        first_name = self.generate_random_string(10)
+        # Генерация данных
+        login, password, first_name = self.generator.generate_courier_data()
         
-        payload = {
-            "login": login,
-            "password": password,
-            "firstName": first_name
-        }
+        # API вызов
+        response = self.api_client.register_new_courier(login, password, first_name)
         
-        response = requests.post(f'{self.BASE_URL}/courier', data=payload)
-        
+        # Обработка результата
         if response.status_code == 201:
             login_pass.append(login)
             login_pass.append(password)
@@ -32,14 +27,14 @@ class CourierHelper:
         
         return login_pass
     
+    @allure.step("Авторизация курьера")
     def login_courier(self, login, password):
-        payload = {
-            "login": login,
-            "password": password
-        }
-        response = requests.post(f'{self.BASE_URL}/courier/login', data=payload)
-        return response
+        return self.api_client.login_courier(login, password)
     
+    @allure.step("Удаление курьера")
     def delete_courier(self, courier_id):
-        response = requests.delete(f'{self.BASE_URL}/courier/{courier_id}')
-        return response
+       return self.api_client.delete_courier(courier_id)
+    
+    @allure.step("Генерация случайной строки")
+    def generate_random_string(self, length):
+        return self.generator.generate_random_string(length)
